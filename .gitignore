@@ -1,0 +1,94 @@
+# ===== Build directories =====
+build/
+out/
+cmake-build-*/
+
+# ===== Visual Studio =====
+.vs/
+*.user
+*.suo
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+[Bb]in/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM/
+ARM64/
+*.sdf
+*.opensdf
+*.unsuccessfulbuild
+ipch/
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+
+# ===== Compiled artifacts =====
+*.exe
+*.dll
+*.lib
+*.obj
+*.o
+*.a
+*.pdb
+*.exp
+
+# ===== CMake =====
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+Testing/
+Makefile
+*.cmake
+!CMakeLists.txt
+!vcpkg.cmake
+
+# ===== vcpkg =====
+vcpkg_installed/
+
+# ===== IDE configurations =====
+.vscode/
+.idea/
+*.swp
+*~
+
+# ===== OS-specific =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ===== Project-specific =====
+# Quarantined malware samples — NEVER commit!
+quarantine/
+*.quarantined
+samples/
+malware/
+
+# Logs
+*.log
+logs/
+events.jsonl
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Local config
+config.local.json
+.env

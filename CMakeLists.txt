@@ -20,8 +20,11 @@ endif()
 find_package(spdlog CONFIG REQUIRED)
 
 # 실행 파일 생성 
-add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
+add_executable(${CMAKE_PROJECT_NAME} src/main.cpp src/core/Logger.hpp src/core/Logger.cpp)
 
 # spdlog 타겟 링크 설정
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)
+
+# include 경로 설정
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE src)
 

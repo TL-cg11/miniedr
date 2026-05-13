@@ -1,8 +1,15 @@
-﻿#include <spdlog/spdlog.h>
+﻿#include "core/Logger.hpp"
+#include <spdlog/spdlog.h>
 
 int main() {
-	spdlog::info("Hello, MiniEDR!");
-	spdlog::warn("This is a warning log.");
-	spdlog::error("This is an error log.");
+	Logger::init();
+
+	Logger::info("Hello, MiniEDR!");
+	Logger::warn("This is a warning log.");
+	Logger::error("This is an error log.");
+
+	Logger::shutdown();
+
+	system("pause"); // 디버깅
 	return 0;
 }

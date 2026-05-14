@@ -1,17 +1,31 @@
-﻿#include "core/Logger.hpp"
+﻿#include <Windows.h>
+#include "core/Logger.hpp"
 #include <spdlog/spdlog.h>
 #include "core/Event.hpp"
+#include "core/EventBus.hpp"
 
-void EventTest();
+Event EventTest();
 
 int main() {
+	SetConsoleOutputCP(CP_UTF8);		// 콘솔 UTF-8로 인코딩
+
 	Logger::init();
 
 	Logger::info("Hello, MiniEDR!");
 	Logger::warn("This is a warning log.");
 	Logger::error("This is an error log.");
 
-	EventTest();
+	//EventTest();
+	EventBus bus;
+
+	bus.subscribe(EventType::FileCreated, [](const Event& e) {
+		Logger::logEvent(e);
+		});
+	bus.subscribe(EventType::FileCreated, [](const Event& e) {
+		Logger::logEvent(e);
+		});
+
+	bus.publish(EventTest());
 
 	Logger::shutdown();
 
@@ -19,7 +33,7 @@ int main() {
 	return 0;
 }
 
-void EventTest() {
+Event EventTest() {
 	Event e;
 	e.timestamp = std::chrono::system_clock::now();
 	e.type = EventType::FileCreated;
@@ -28,5 +42,7 @@ void EventTest() {
 	e.message = "New File";
 	e.file_path = "C:\\test\\malware.exe";
 
-	Logger::warn("Event: " + e.source + " - " + e.message);
+	return e;
+
+	//Logger::warn("Event: " + e.source + " - " + e.message);
 }

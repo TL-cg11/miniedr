@@ -36,12 +36,26 @@ void Logger::shutdown() {
 	spdlog::shutdown(); // spdlog 자체 종료
 }
 
-void Logger::info(std::string s) {
+void Logger::logEvent(const Event& e) {
+	switch (e.severity) {
+	case Severity::Info:
+		Logger::info(e.message);
+		break;
+	case Severity::Warning:
+		Logger::warn(e.message);
+		break;
+	case Severity::Error:
+		Logger::error(e.message);
+		break;
+	}
+}
+
+void Logger::info(const std::string& s) {
 	s_logger->info(s);
 }
-void Logger::warn(std::string s) {
+void Logger::warn(const std::string& s) {
 	s_logger->warn(s);
 }
-void Logger::error(std::string s) {
+void Logger::error(const std::string& s) {
 	s_logger->error(s);
 }

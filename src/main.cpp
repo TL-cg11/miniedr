@@ -1,5 +1,8 @@
 ﻿#include "core/Logger.hpp"
 #include <spdlog/spdlog.h>
+#include "core/Event.hpp"
+
+void EventTest();
 
 int main() {
 	Logger::init();
@@ -8,8 +11,22 @@ int main() {
 	Logger::warn("This is a warning log.");
 	Logger::error("This is an error log.");
 
+	EventTest();
+
 	Logger::shutdown();
 
 	system("pause"); // 디버깅
 	return 0;
+}
+
+void EventTest() {
+	Event e;
+	e.timestamp = std::chrono::system_clock::now();
+	e.type = EventType::FileCreated;
+	e.source = "DirectoryMonitor";
+	e.severity = Severity::Warning;
+	e.message = "New File";
+	e.file_path = "C:\\test\\malware.exe";
+
+	Logger::warn("Event: " + e.source + " - " + e.message);
 }

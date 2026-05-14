@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 #include "core/Event.hpp"
 #include "core/EventBus.hpp"
+#include "storage/Database.hpp"
 
 Event EventTest();
 
@@ -10,6 +11,9 @@ int main() {
 	SetConsoleOutputCP(CP_UTF8);		// 콘솔 UTF-8로 인코딩
 
 	Logger::init();
+
+	Database db;
+	db.init("events.db");
 
 	Logger::info("Hello, MiniEDR!");
 	Logger::warn("This is a warning log.");
@@ -20,13 +24,14 @@ int main() {
 
 	bus.subscribe(EventType::FileCreated, [](const Event& e) {
 		Logger::logEvent(e);
-		});
-	bus.subscribe(EventType::FileCreated, [](const Event& e) {
-		Logger::logEvent(e);
-		});
+	});
+	bus.subscribe(EventType::FileCreated, [&db](const Event& e) {
+		db.insertEvent(e);
+	});
 
 	bus.publish(EventTest());
 
+	db.shutdown();
 	Logger::shutdown();
 
 	system("pause"); // 디버깅

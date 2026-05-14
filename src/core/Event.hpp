@@ -35,3 +35,7 @@ struct Event {
 	std::optional<std::string> rule_name;			// 룰 매칭
 	std::optional<std::string> quarantine_path;		// 격리된 위치
 };
+
+std::string eventTypeToString(EventType type);
+std::string severityToString(Severity severity);
+std::string timePointToString(TimePoint timestamp);

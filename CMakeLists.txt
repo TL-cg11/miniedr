@@ -18,12 +18,23 @@ if(MSVC)
 endif()
 
 find_package(spdlog CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
 
 # 실행 파일 생성 
-add_executable(${CMAKE_PROJECT_NAME} src/main.cpp src/core/Logger.hpp src/core/Logger.cpp src/core/Event.hpp src/core/EventBus.hpp src/core/EventBus.cpp)
+add_executable(${CMAKE_PROJECT_NAME} 
+ src/main.cpp
+ src/core/Logger.hpp
+ src/core/Logger.cpp
+ src/core/Event.hpp
+ src/core/Event.cpp
+ src/core/EventBus.hpp
+ src/core/EventBus.cpp
+ src/storage/Database.hpp
+ src/storage/Database.cpp)
 
 # spdlog 타겟 링크 설정
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE unofficial::sqlite3::sqlite3)
 
 # include 경로 설정
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE src)

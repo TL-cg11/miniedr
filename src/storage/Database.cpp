@@ -1,10 +1,12 @@
 ﻿#include "Database.hpp"
 #include "../core/Logger.hpp"
 
-void Database::init(const std::string& dbPath) {
+Database::Database(const std::string& dbPath) {
 	int rc = sqlite3_open(dbPath.c_str(), &m_db);
 	if (rc != SQLITE_OK) {
 		Logger::error(sqlite3_errmsg(m_db));
+		sqlite3_close(m_db);
+		m_db = nullptr;
 		return;
 	}
 
@@ -34,7 +36,7 @@ void Database::init(const std::string& dbPath) {
 	Logger::info("Database initialized");
 }
 
-void Database::shutdown() {
+Database::~Database() {
 	if (m_db) {
 		sqlite3_close(m_db);
 		m_db = nullptr;

@@ -1,53 +1,45 @@
 ﻿#include <Windows.h>
 #include "core/Logger.hpp"
-#include <spdlog/spdlog.h>
 #include "core/Event.hpp"
 #include "core/EventBus.hpp"
 #include "storage/Database.hpp"
 
-Event EventTest();
+// TODO: Phase 3에서 실제 이벤트 소스로 교체
+Event makeDemoEvent();
 
 int main() {
 	SetConsoleOutputCP(CP_UTF8);		// 콘솔 UTF-8로 인코딩
 
 	Logger::init();
 
-	Database db;
-	db.init("events.db");
+	{
+		Database db("events.db");
 
-	Logger::info("Hello, MiniEDR!");
-	Logger::warn("This is a warning log.");
-	Logger::error("This is an error log.");
+		EventBus bus;
 
-	//EventTest();
-	EventBus bus;
+		bus.subscribe(EventType::FileCreated, [](const Event& e) {
+			Logger::logEvent(e);
+			});
+		bus.subscribe(EventType::FileCreated, [&db](const Event& e) {
+			db.insertEvent(e);
+			});
 
-	bus.subscribe(EventType::FileCreated, [](const Event& e) {
-		Logger::logEvent(e);
-	});
-	bus.subscribe(EventType::FileCreated, [&db](const Event& e) {
-		db.insertEvent(e);
-	});
+		bus.publish(makeDemoEvent());
+	}
 
-	bus.publish(EventTest());
-
-	db.shutdown();
 	Logger::shutdown();
 
-	system("pause"); // 디버깅
 	return 0;
 }
 
-Event EventTest() {
+Event makeDemoEvent() {
 	Event e;
 	e.timestamp = std::chrono::system_clock::now();
 	e.type = EventType::FileCreated;
-	e.source = "DirectoryMonitor";
+	e.source = "DemoSource";
 	e.severity = Severity::Warning;
-	e.message = "New File";
+	e.message = "Demo Event";
 	e.file_path = "C:\\test\\malware.exe";
 
 	return e;
-
-	//Logger::warn("Event: " + e.source + " - " + e.message);
 }

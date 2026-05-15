@@ -6,8 +6,8 @@
 
 class Database {
 public:
-	void init(const std::string& dbPath);
-	void shutdown();
+	Database(const std::string& dbPath);
+	~Database();
 
 	void insertEvent(const Event& e);
 private:

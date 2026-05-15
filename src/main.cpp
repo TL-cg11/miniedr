@@ -3,6 +3,7 @@
 #include "core/Event.hpp"
 #include "core/EventBus.hpp"
 #include "storage/Database.hpp"
+#include "detection/HashDetector.hpp"
 
 // TODO: Phase 3에서 실제 이벤트 소스로 교체
 Event makeDemoEvent();
@@ -29,6 +30,13 @@ int main() {
 
 	Logger::shutdown();
 
+	HashDetector det;
+	if (det.loadBlacklist("C:/EDR-Test/hashes.txt")) {
+		ScanResult r = det.scan("C:/EDR-Test/samples/sha256Test.txt");
+		Logger::info("Scan detected: " + std::to_string(r.detected) + ", rule: " + r.ruleName);
+	}
+
+	system("pause");
 	return 0;
 }
 

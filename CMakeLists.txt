@@ -30,11 +30,15 @@ add_executable(${CMAKE_PROJECT_NAME}
  src/core/EventBus.hpp
  src/core/EventBus.cpp
  src/storage/Database.hpp
- src/storage/Database.cpp)
+ src/storage/Database.cpp
+ src/detection/IDetector.hpp
+ src/detection/HashDetector.hpp
+ src/detection/HashDetector.cpp)
 
 # spdlog 타겟 링크 설정
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE unofficial::sqlite3::sqlite3)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE bcrypt)
 
 # include 경로 설정
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE src)

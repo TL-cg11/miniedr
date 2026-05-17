@@ -4,6 +4,7 @@
 #include "core/EventBus.hpp"
 #include "storage/Database.hpp"
 #include "detection/HashDetector.hpp"
+#include "detection/YaraDetector.hpp"
 
 // TODO: Phase 3에서 실제 이벤트 소스로 교체
 Event makeDemoEvent();
@@ -26,6 +27,21 @@ int main() {
 			});
 
 		bus.publish(makeDemoEvent());
+	}
+
+	{
+		YaraDetector yaraDet;
+		Logger::info("YaraDetector created");
+		if (yaraDet.loadRule(R"(C:\Dev\miniedr\rules\test.yar)")) {
+			Logger::info("YARA rules loaded successfully");
+		}
+		else {
+			Logger::error("YARA rules load failed");
+		}
+
+		ScanResult yr = yaraDet.scan("C:/EDR-Test/samples/eicar.com.txt");
+		Logger::info("Yara scan detected: " + std::to_string(yr.detected) +
+			", rule: " + yr.ruleName);
 	}
 
 	Logger::shutdown();

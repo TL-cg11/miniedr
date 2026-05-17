@@ -19,6 +19,7 @@ endif()
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(unofficial-libyara CONFIG REQUIRED)
 
 # 실행 파일 생성 
 add_executable(${CMAKE_PROJECT_NAME} 
@@ -33,12 +34,15 @@ add_executable(${CMAKE_PROJECT_NAME}
  src/storage/Database.cpp
  src/detection/IDetector.hpp
  src/detection/HashDetector.hpp
- src/detection/HashDetector.cpp)
+ src/detection/HashDetector.cpp
+ src/detection/YaraDetector.hpp
+ src/detection/YaraDetector.cpp)
 
 # spdlog 타겟 링크 설정
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE unofficial::sqlite3::sqlite3)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE bcrypt)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE unofficial::libyara::libyara)
 
 # include 경로 설정
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE src)

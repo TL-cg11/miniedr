@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "detection/IDetector.hpp"
 #include <string> // std::string
 #include <chrono> // std::chrono::system_clock
 #include <optional> // std::optional
@@ -39,3 +40,6 @@ struct Event {
 std::string eventTypeToString(EventType type);
 std::string severityToString(Severity severity);
 std::string timePointToString(TimePoint timestamp);
+
+Event makeDetectionEvent(const ScanResult& result, 
+	const std::string& filePath);

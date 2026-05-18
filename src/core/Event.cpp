@@ -39,3 +39,16 @@ std::string timePointToString(TimePoint timestamp) {
 
 	return oss.str();
 }
+
+Event makeDetectionEvent(const ScanResult& result, const std::string& filePath) {
+	Event e;
+	e.timestamp = std::chrono::system_clock::now();
+	e.type = EventType::ThreatDetected;
+	e.source = result.detectorName;
+	e.severity = Severity::Warning;
+	e.message = result.detectorName + " matched rule '" + result.ruleName + "' on file " + filePath;
+	e.file_path = filePath;
+	e.rule_name = result.ruleName;
+
+	return e;
+}

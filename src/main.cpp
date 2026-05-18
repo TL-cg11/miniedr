@@ -5,6 +5,7 @@
 #include "storage/Database.hpp"
 #include "detection/HashDetector.hpp"
 #include "detection/YaraDetector.hpp"
+#include "scanner/FileScanner.hpp"
 
 int main() {
 	SetConsoleOutputCP(CP_UTF8);		// 콘솔 UTF-8로 인코딩
@@ -48,6 +49,14 @@ int main() {
 		ScanResult yr = yaraDet.scan(filePath);
 		if (yr.detected) {
 			bus.publish(makeDetectionEvent(yr, filePath));
+		}
+
+		FileScanner scanner;
+		auto files = scanner.scan("C:/EDR-Test/watch");
+
+		Logger::info("FileScanner found " + std::to_string(files.size()) + " files");
+		for (const auto& f : files) {
+			Logger::info("  " + f);
 		}
 	}
 

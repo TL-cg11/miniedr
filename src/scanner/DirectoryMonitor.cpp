@@ -2,7 +2,6 @@
 #include "core/Logger.hpp"
 #include "core/Event.hpp"
 #include "core/StringUtil.hpp"
-#include <Windows.h>
 
 namespace {
 	bool isRegularFile(const std::wstring& path) {
@@ -16,8 +15,23 @@ namespace {
 	}
 }
 
+DirectoryMonitor::~DirectoryMonitor() {
+	if (m_hDir != INVALID_HANDLE_VALUE) {
+		CloseHandle(m_hDir);
+		m_hDir = INVALID_HANDLE_VALUE;
+	}
+	if (m_hChangeEvent != NULL) {
+		CloseHandle(m_hChangeEvent);
+		m_hChangeEvent = NULL;
+	}
+	if (m_hStopEvent != NULL) {
+		CloseHandle(m_hStopEvent);
+		m_hStopEvent = NULL;
+	}
+}
+
 bool DirectoryMonitor::start(const std::wstring& watchPath, EventBus& bus) {
-	HANDLE hDir = CreateFileW(
+	m_hDir = CreateFileW(
 		watchPath.c_str(),
 		FILE_LIST_DIRECTORY,
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -26,35 +40,27 @@ bool DirectoryMonitor::start(const std::wstring& watchPath, EventBus& bus) {
 		FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
 		NULL
 	);
-	if (hDir == INVALID_HANDLE_VALUE) {
+	if (m_hDir == INVALID_HANDLE_VALUE) {
 		DWORD err = GetLastError();
 		Logger::error("CreateFileW failed, error code: " + std::to_string(err));
 		return false;
 	}
 
-	HANDLE hEvent = CreateEventW(
-		NULL,
-		FALSE,
-		FALSE,
-		NULL
-	);
-	if (hEvent == NULL) {
-		DWORD err = GetLastError();
-		Logger::error("CreateEventW failed, error code: " + std::to_string(err));
-		CloseHandle(hDir);
-		return 1;
-	}
+	m_hChangeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
 
 	OVERLAPPED ov;
 	BYTE buffer[4096];
 
-	while (true) {
+	while (m_running) {
 
 		ov = {};
-		ov.hEvent = hEvent;
+		//ov.hEvent = hEvent;
+		ov.hEvent = m_hChangeEvent;
 
 		BOOL ok = ReadDirectoryChangesW(
-			hDir,
+			m_hDir,
 			buffer,
 			sizeof(buffer),
 			TRUE,
@@ -65,86 +71,85 @@ bool DirectoryMonitor::start(const std::wstring& watchPath, EventBus& bus) {
 		);
 		if (!ok) {
 			Logger::error("ReadDirectoryChangesW failed: " + std::to_string(GetLastError()));
-			CloseHandle(hEvent);
-			CloseHandle(hDir);
 			break;
 		}
 
 		Logger::info("Monitoring... (drop a file into watch folder to trigger)");
 
-		DWORD wr = WaitForSingleObject(
-			hEvent,
-			INFINITE
-		);
-		if (wr != WAIT_OBJECT_0) {
-			Logger::error("WaitForSingleObject failed: " + std::to_string(wr));
-			CloseHandle(hEvent);
-			CloseHandle(hDir);
-			break;
-		}
+		HANDLE handles[2] = { m_hChangeEvent, m_hStopEvent };
+		DWORD wr = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
 
-		DWORD bytesReturned = 0;
-		if (!GetOverlappedResult(hDir, &ov, &bytesReturned, FALSE)) {
-			Logger::error("GetOverlappedResult failed: " + std::to_string(GetLastError()));
-			CloseHandle(hEvent);
-			CloseHandle(hDir);
-			break;
-		}
-
-		if (bytesReturned == 0) {
-			Logger::warn("Empty notification received (buffer overflow?)");
-			continue;
-		}
-		else {
-			Logger::info("Change detected! " + std::to_string(bytesReturned) + " bytes");
-		}
-
-		BYTE* ptr = buffer;
-		while (true) {
-			auto* info = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(ptr);
-
-			// 파일명 추출
-			std::wstring wname(info->FileName, info->FileNameLength / sizeof(WCHAR));
-
-			std::wstring wfullPath = watchPath + L"/" + wname;
-			std::string fullPath = StringUtil::wstringToUtf8(wfullPath);
-
-			switch (info->Action) {
-			case FILE_ACTION_ADDED:
-				Logger::info("\t[ADDED] " + fullPath);
-				if (isRegularFile(wfullPath)) {
-					bus.publish(makeFileSystemEvent(EventType::FileCreated, fullPath));
-				}
-				break;
-			case FILE_ACTION_REMOVED:
-				Logger::info("\t[REMOVED] " + fullPath);
-				break;
-			case FILE_ACTION_MODIFIED:
-				Logger::info("\t[MODIFIED] " + fullPath);
-				if (isRegularFile(wfullPath)) {
-					bus.publish(makeFileSystemEvent(EventType::FileModified, fullPath));
-				}
-				break;
-			case FILE_ACTION_RENAMED_OLD_NAME:
-				Logger::info("\t[RENAMED_OLD] " + fullPath);
-				break;
-			case FILE_ACTION_RENAMED_NEW_NAME:
-				Logger::info("\t[RENAMED_NEW] " + fullPath);
-				if (isRegularFile(wfullPath)) {
-					bus.publish(makeFileSystemEvent(EventType::FileCreated, fullPath));
-				}
-				break;
-			default:
-				Logger::warn("Unknown action: " + std::to_string(info->Action));
+		if (wr == WAIT_OBJECT_0 + 0) {
+			DWORD bytesReturned = 0;
+			if (!GetOverlappedResult(m_hDir, &ov, &bytesReturned, FALSE)) {
+				Logger::error("GetOverlappedResult failed: " + std::to_string(GetLastError()));
 				break;
 			}
 
-			if (info->NextEntryOffset == 0) break;
-			ptr += info->NextEntryOffset;
+			if (bytesReturned == 0) {
+				Logger::warn("Empty notification received (buffer overflow?)");
+				continue;
+			}
+			else {
+				Logger::info("Change detected! " + std::to_string(bytesReturned) + " bytes");
+			}
+
+			BYTE* ptr = buffer;
+			while (true) {
+				auto* info = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(ptr);
+
+				// 파일명 추출
+				std::wstring wname(info->FileName, info->FileNameLength / sizeof(WCHAR));
+
+				std::wstring wfullPath = watchPath + L"/" + wname;
+				std::string fullPath = StringUtil::wstringToUtf8(wfullPath);
+
+				switch (info->Action) {
+				case FILE_ACTION_ADDED:
+					Logger::info("\t[ADDED] " + fullPath);
+					if (isRegularFile(wfullPath)) {
+						bus.publish(makeFileSystemEvent(EventType::FileCreated, fullPath));
+					}
+					break;
+				case FILE_ACTION_REMOVED:
+					Logger::info("\t[REMOVED] " + fullPath);
+					break;
+				case FILE_ACTION_MODIFIED:
+					Logger::info("\t[MODIFIED] " + fullPath);
+					if (isRegularFile(wfullPath)) {
+						bus.publish(makeFileSystemEvent(EventType::FileModified, fullPath));
+					}
+					break;
+				case FILE_ACTION_RENAMED_OLD_NAME:
+					Logger::info("\t[RENAMED_OLD] " + fullPath);
+					break;
+				case FILE_ACTION_RENAMED_NEW_NAME:
+					Logger::info("\t[RENAMED_NEW] " + fullPath);
+					if (isRegularFile(wfullPath)) {
+						bus.publish(makeFileSystemEvent(EventType::FileCreated, fullPath));
+					}
+					break;
+				default:
+					Logger::warn("Unknown action: " + std::to_string(info->Action));
+					break;
+				}
+
+				if (info->NextEntryOffset == 0) break;
+				ptr += info->NextEntryOffset;
+			}
+		}
+		else if (wr == WAIT_OBJECT_0 + 1) {
+			CancelIo(m_hDir);
+			break;
+		}
+		else {
+			break;
 		}
 	}
-
-	CloseHandle(hEvent);
-	CloseHandle(hDir);
 	return true;
+}
+
+void DirectoryMonitor::stop() {
+	m_running = false;
+	SetEvent(m_hStopEvent);
 }

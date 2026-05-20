@@ -1,4 +1,7 @@
 ﻿#include <Windows.h>
+#include <thread>
+#include <iostream>
+#include <string>
 #include "core/Logger.hpp"
 #include "core/Event.hpp"
 #include "core/EventBus.hpp"
@@ -84,13 +87,26 @@ int main() {
 		bus.subscribe(EventType::FileCreated, onFileChange);
 		bus.subscribe(EventType::FileModified, onFileChange);
 
-		Logger::info("=== Starting real-time directory monitoring ===");
 		DirectoryMonitor monitor;
-		monitor.start(L"C:/EDR-Test/watch", bus);
+		std::thread monitorThread(&DirectoryMonitor::start, &monitor, L"C:/EDR-Test/watch", std::ref(bus));
+
+		Logger::info("Monitoring started. Type 'stop' to quit.");
+
+		std::string cmd;
+		while (std::cin >> cmd) {
+			if (cmd == "stop") {
+				break;
+			}
+			Logger::info("Unknown command: " + cmd);
+		}
+
+		Logger::info("Stop requested, shutting down monitor...");
+		monitor.stop();
+		monitorThread.join();
+		Logger::info("Monitor stopped cleanly.");
 	}
 
 	Logger::shutdown();
 
-	system("pause");
 	return 0;
 }

@@ -43,3 +43,5 @@ std::string timePointToString(TimePoint timestamp);
 
 Event makeDetectionEvent(const ScanResult& result, 
 	const std::string& filePath);
+
+Event makeFileSystemEvent(EventType type, const std::string& filePath);

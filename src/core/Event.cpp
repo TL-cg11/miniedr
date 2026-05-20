@@ -52,3 +52,15 @@ Event makeDetectionEvent(const ScanResult& result, const std::string& filePath) 
 
 	return e;
 }
+
+Event makeFileSystemEvent(EventType type, const std::string& filePath) {
+	Event e;
+	e.timestamp = std::chrono::system_clock::now();
+	e.type = type;
+	e.source = "DirectoryMonitor";
+	e.severity = Severity::Info;
+	e.message = "Filesystem change detected";
+	e.file_path = filePath;
+
+	return e;
+}

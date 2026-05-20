@@ -10,7 +10,7 @@ std::vector<std::string> FileScanner::scan(const std::string& directory) {
 	try {
 		for (const auto& entry : fs::recursive_directory_iterator(directory)) {
 			if (entry.is_regular_file()) {
-				result.push_back(entry.path().generic_string());
+				result.push_back(entry.path().generic_u8string());
 			}
 		}
 	}

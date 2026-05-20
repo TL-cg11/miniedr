@@ -1,5 +1,59 @@
 ﻿#include "YaraDetector.hpp"
 #include "core/Logger.hpp"
+#include "core/StringUtil.hpp"
+#include <Windows.h>
+#include <vector>
+
+namespace {
+	std::vector<BYTE> readFileToMemory(const std::wstring& wpath) {
+		HANDLE h = CreateFileW(
+			wpath.c_str(),
+			GENERIC_READ,			// 읽기 권한
+			FILE_SHARE_READ,		// 다른 프로세스 읽기 허용
+			NULL,
+			OPEN_EXISTING,			// 기존 파일만
+			FILE_ATTRIBUTE_NORMAL,
+			NULL
+		);
+		if (h == INVALID_HANDLE_VALUE) {
+			return {};
+		}
+
+		// 파일 크기 확인
+		LARGE_INTEGER size;
+		if (!GetFileSizeEx(h, &size)) {
+			CloseHandle(h);
+			return {};
+		}
+
+		// 비정상 크기 처리
+		const LONGLONG MAX_SIZE = 100LL * 1024 * 1024;	// 100MB
+		if (size.QuadPart == 0 || size.QuadPart > MAX_SIZE) {
+			CloseHandle(h);
+			return {};
+		}
+
+		// 메모리 할당
+		std::vector<BYTE> buffer((size_t)size.QuadPart);
+
+		// 파일 내용 읽기
+		DWORD bytesRead = 0;
+		BOOL ok = ReadFile(
+			h,
+			buffer.data(),
+			(DWORD)buffer.size(),
+			&bytesRead,
+			NULL
+		);
+		CloseHandle(h);
+
+		if (!ok || bytesRead != buffer.size()) {
+			return {};
+		}
+
+		return buffer;
+	}
+}
 
 YaraDetector::YaraDetector() {
 	yr_initialize();
@@ -49,18 +103,22 @@ bool YaraDetector::loadRule(const std::string& rulePath) {
 	return true;
 }
 
-ScanResult YaraDetector::scan(const std::string& filePath) {
+ScanResult YaraDetector::scan(const std::string& path) {
 	ScanResult result;
 	result.detectorName = "YaraDetector";
 
-	if (m_rules == nullptr) {
-		Logger::error("YaraDetector::scan called before loadRule");
+	std::wstring wpath = StringUtil::utf8ToWstring(path);
+
+	std::vector<BYTE> bytes = readFileToMemory(wpath);
+	if (bytes.empty()) {
+		Logger::info("YARA scan skipped (empty or unreadable): " + path);
 		return result;
 	}
 
-	int rc = yr_rules_scan_file(
+	int rc = yr_rules_scan_mem(
 		m_rules,
-		filePath.c_str(),
+		bytes.data(),
+		bytes.size(),
 		0,
 		yaraCallback,
 		&result,
@@ -68,7 +126,7 @@ ScanResult YaraDetector::scan(const std::string& filePath) {
 	);
 
 	if (rc != ERROR_SUCCESS) {
-		Logger::error("yr_rules_scan_file failed for: " + filePath);
+		Logger::error("yr_rules_scan_file failed for: " + path);
 	}
 
 	return result;

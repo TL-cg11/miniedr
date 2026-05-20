@@ -6,6 +6,9 @@
 #include "detection/HashDetector.hpp"
 #include "detection/YaraDetector.hpp"
 #include "scanner/FileScanner.hpp"
+#include "core/StringUtil.hpp"
+#include "scanner/DirectoryMonitor.hpp"
+
 
 int main() {
 	SetConsoleOutputCP(CP_UTF8);		// 콘솔 UTF-8로 인코딩
@@ -57,6 +60,33 @@ int main() {
 				bus.publish(makeDetectionEvent(yr, f));
 			}
 		}
+
+		auto onFileChange = [&](const Event& e) {
+			if (!e.file_path) {
+				Logger::warn("File event without path");
+				return;
+			}
+			const std::string& path = *e.file_path;
+
+			Logger::info("Auto-scanning: " + path);
+
+			ScanResult hr = hashDet.scan(path);
+			if (hr.detected) {
+				bus.publish(makeDetectionEvent(hr, path));
+			}
+
+			ScanResult yr = yaraDet.scan(path);
+			if (yr.detected) {
+				bus.publish(makeDetectionEvent(yr, path));
+			}
+		};
+
+		bus.subscribe(EventType::FileCreated, onFileChange);
+		bus.subscribe(EventType::FileModified, onFileChange);
+
+		Logger::info("=== Starting real-time directory monitoring ===");
+		DirectoryMonitor monitor;
+		monitor.start(L"C:/EDR-Test/watch", bus);
 	}
 
 	Logger::shutdown();

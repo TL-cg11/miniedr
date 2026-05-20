@@ -38,7 +38,11 @@ add_executable(${CMAKE_PROJECT_NAME}
  src/detection/YaraDetector.hpp
  src/detection/YaraDetector.cpp
  src/scanner/FileScanner.hpp
- src/scanner/FileScanner.cpp)
+ src/scanner/FileScanner.cpp
+ src/scanner/DirectoryMonitor.hpp
+ src/scanner/DirectoryMonitor.cpp
+ src/core/StringUtil.hpp
+ src/core/StringUtil.cpp)
 
 # spdlog 타겟 링크 설정
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)

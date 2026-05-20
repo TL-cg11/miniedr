@@ -1,5 +1,6 @@
 ﻿#include "HashDetector.hpp"
 #include "core/Logger.hpp"
+#include "core/StringUtil.hpp"
 #include <windows.h>
 #include <bcrypt.h>
 #include <vector>
@@ -48,12 +49,20 @@ bool HashDetector::loadBlacklist(const std::string& blacklistPath) {
 	return true;
 }
 
-ScanResult HashDetector::scan(const std::string& filePath) {
+ScanResult HashDetector::scan(const std::string& path) {
 	ScanResult result;
 	result.detectorName = "HashDetector";
+
+	std::wstring wpath = StringUtil::utf8ToWstring(path);
+
+	std::ifstream file(wpath, std::ios::binary);
+	if (!file.is_open()) {
+		Logger::error("Failed to open file for hashing: " + path);
+		return result;
+	}
 	
 	// SHA256 계산
-	std::string hash = computeSha256(filePath);
+	std::string hash = computeSha256(path);
 	if (hash.empty()) {
 		return result;
 	}
@@ -117,7 +126,8 @@ std::string HashDetector::computeSha256(const std::string& filePath) {
 	}
 
 	// 파일 열기 (바이너리 모드 필수)
-	std::ifstream file(filePath, std::ios::binary);
+	std::wstring wpath = StringUtil::utf8ToWstring(filePath);
+	std::ifstream file(wpath, std::ios::binary);
 	if (!file) {
 		BCryptDestroyHash(hHash);
 		BCryptCloseAlgorithmProvider(hAlg, 0);

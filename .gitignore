@@ -79,6 +79,10 @@ quarantine/
 samples/
 malware/
 
+# 소스 코드 예외
+!src/quarantine/
+!src/quarantine/**
+
 # Logs
 *.log
 logs/

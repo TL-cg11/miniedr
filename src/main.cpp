@@ -11,6 +11,7 @@
 #include "scanner/FileScanner.hpp"
 #include "core/StringUtil.hpp"
 #include "scanner/DirectoryMonitor.hpp"
+#include "quarantine/Quarantine.hpp"
 
 
 int main() {
@@ -23,12 +24,26 @@ int main() {
 
 		EventBus bus;
 
+		Quarantine quarantine("quarantine");
+
 		bus.subscribe(EventType::ThreatDetected, [](const Event& e) {
 			Logger::logEvent(e);
-			});
-		bus.subscribe(EventType::ThreatDetected, [&db](const Event& e) {
-			db.insertEvent(e);
-			});
+		});
+		bus.subscribe(EventType::ThreatDetected, [&quarantine, &db](const Event& e) {
+			if (!e.file_path) {
+				db.insertEvent(e);
+				return;
+			}
+
+			std::string ruleName = e.rule_name.value_or("unknown");
+			std::string quarantinePath = quarantine.quarantineFile(*e.file_path, ruleName);
+
+			Event enriched = e;
+			if (!quarantinePath.empty()) {
+				enriched.quarantine_path = quarantinePath;
+			}
+			db.insertEvent(enriched);
+		});
 
 		HashDetector hashDet;
 		if (hashDet.loadBlacklist("C:/EDR-Test/hashes.txt")) {

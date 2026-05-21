@@ -42,7 +42,9 @@ add_executable(${CMAKE_PROJECT_NAME}
  src/scanner/DirectoryMonitor.hpp
  src/scanner/DirectoryMonitor.cpp
  src/core/StringUtil.hpp
- src/core/StringUtil.cpp)
+ src/core/StringUtil.cpp
+ src/quarantine/Quarantine.hpp
+ src/quarantine/Quarantine.cpp)
 
 # spdlog 타겟 링크 설정
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)

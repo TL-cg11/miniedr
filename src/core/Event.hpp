@@ -45,3 +45,6 @@ Event makeDetectionEvent(const ScanResult& result,
 	const std::string& filePath);
 
 Event makeFileSystemEvent(EventType type, const std::string& filePath);
+
+std::string timePointToIso8601(TimePoint timestamp);
+std::string eventToJson(const Event& e);

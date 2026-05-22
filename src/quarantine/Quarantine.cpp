@@ -32,7 +32,7 @@ std::string Quarantine::quarantineFile(const std::string& originalPath, const st
 	}
 
 	// 파일명 추출
-	std::string originalFilename = srcPath.filename().string();
+	std::string originalFilename = srcPath.filename().u8string();
 
 	// 타임스탬프 문자열
 	auto now = std::chrono::system_clock::now();
@@ -48,7 +48,7 @@ std::string Quarantine::quarantineFile(const std::string& originalPath, const st
 	std::string quarantineName = timestamp + "_" + originalFilename + ".qtn";
 
 	// 전체 경로
-	fs::path destPath = m_quarantineDir / quarantineName;
+	fs::path destPath = m_quarantineDir / fs::u8path(quarantineName);
 
 	// UTF-16으로 변환
 	std::wstring wSrc = srcPath.wstring();
@@ -65,7 +65,7 @@ std::string Quarantine::quarantineFile(const std::string& originalPath, const st
 		return "";
 	}
 
-	Logger::info("Quarantine: '" + originalPath + "' -> '" + destPath.string() + "' (rule=" + ruleName + ")");
+	Logger::info("Quarantine: '" + originalPath + "' -> '" + destPath.u8string() + "' (rule=" + ruleName + ")");
 
-	return destPath.string();
+	return destPath.u8string();
 }

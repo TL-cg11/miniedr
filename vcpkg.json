@@ -5,6 +5,7 @@
   "dependencies": [
     "spdlog",
     "sqlite3",
-    "yara"
+    "yara",
+    "nlohmann-json"
   ]
 }

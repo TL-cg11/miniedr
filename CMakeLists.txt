@@ -20,6 +20,7 @@ endif()
 find_package(spdlog CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(unofficial-libyara CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # 실행 파일 생성 
 add_executable(${CMAKE_PROJECT_NAME} 
@@ -51,6 +52,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE spdlog::spdlog)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE unofficial::sqlite3::sqlite3)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE bcrypt)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE unofficial::libyara::libyara)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
 # include 경로 설정
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE src)

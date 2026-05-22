@@ -2,6 +2,7 @@
 #include <thread>
 #include <iostream>
 #include <string>
+#include <fstream>
 #include "core/Logger.hpp"
 #include "core/Event.hpp"
 #include "core/EventBus.hpp"
@@ -26,12 +27,15 @@ int main() {
 
 		Quarantine quarantine("quarantine");
 
+		std::ofstream jsonlOut("events.jsonl", std::ios::app);
+
 		bus.subscribe(EventType::ThreatDetected, [](const Event& e) {
 			Logger::logEvent(e);
 		});
-		bus.subscribe(EventType::ThreatDetected, [&quarantine, &db](const Event& e) {
+		bus.subscribe(EventType::ThreatDetected, [&quarantine, &db, &jsonlOut](const Event& e) {
 			if (!e.file_path) {
 				db.insertEvent(e);
+				jsonlOut << eventToJson(e) << std::endl;
 				return;
 			}
 
@@ -43,6 +47,7 @@ int main() {
 				enriched.quarantine_path = quarantinePath;
 			}
 			db.insertEvent(enriched);
+			jsonlOut << eventToJson(enriched) << std::endl;
 		});
 
 		HashDetector hashDet;

@@ -2,6 +2,7 @@
 #include <ctime>		// time_t, tm, localtime_s, strftime
 #include <sstream>		// std::ostringstream
 #include <iomanip>		// std::put_time
+#include <nlohmann/json.hpp>
 
 std::string eventTypeToString(EventType type) {
 	switch (type) {
@@ -63,4 +64,35 @@ Event makeFileSystemEvent(EventType type, const std::string& filePath) {
 	e.file_path = filePath;
 
 	return e;
+}
+
+std::string timePointToIso8601(TimePoint timestamp) {
+	time_t tt = std::chrono::system_clock::to_time_t(timestamp);
+	std::tm t;
+	localtime_s(&t, &tt);
+	std::ostringstream oss;
+	oss << std::put_time(&t, "%Y-%m-%dT%H:%M:%S");
+	return oss.str();
+}
+
+std::string eventToJson(const Event& e) {
+	nlohmann::json j;
+
+	j["timestamp"] = timePointToIso8601(e.timestamp);
+	j["type"] = eventTypeToString(e.type);
+	j["source"] = e.source;
+	j["severity"] = severityToString(e.severity);
+	j["message"] = e.message;
+
+	if (e.file_path) {
+		j["file_path"] = *e.file_path;
+	}
+	if (e.rule_name) {
+		j["rule_name"] = *e.rule_name;
+	}
+	if (e.quarantine_path) {
+		j["quarantine_path"] = *e.quarantine_path;
+	}
+
+	return j.dump();
 }

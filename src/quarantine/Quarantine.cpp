@@ -65,6 +65,11 @@ std::string Quarantine::quarantineFile(const std::string& originalPath, const st
 		return "";
 	}
 
+	if (!fs::exists(destPath, ec)) {
+		Logger::error("Quarantine: MoveFileExW returned success but '" + destPath.u8string() + "' does not exist");
+		return "";
+	}
+
 	Logger::info("Quarantine: '" + originalPath + "' -> '" + destPath.u8string() + "' (rule=" + ruleName + ")");
 
 	return destPath.u8string();

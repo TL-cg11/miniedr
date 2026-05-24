@@ -8,7 +8,8 @@ std::vector<std::string> FileScanner::scan(const std::string& directory) {
 	std::vector<std::string> result;
 
 	try {
-		for (const auto& entry : fs::recursive_directory_iterator(directory)) {
+
+		for (const auto& entry : fs::recursive_directory_iterator(directory, fs::directory_options::skip_permission_denied)) {
 			if (entry.is_regular_file()) {
 				result.push_back(entry.path().generic_u8string());
 			}
